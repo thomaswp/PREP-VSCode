@@ -12,6 +12,8 @@ const subjectIDField = "logging.subjectID";
 const configSection = "CERPENT";
 const problemPrefix = "# Problem:";
 
+const MIN_EDIT_TIME = 100;
+
 // TODO: Get this from some course-specific configuration
 const subjectIDRegex = /^[a-zA-Z]{2,}[0-9]*$/;
 const emailRegex = /^[a-zA-Z]{2,}[0-9]*@ncsu.edu$/;
@@ -88,9 +90,15 @@ export function activate(context: vscode.ExtensionContext) {
         panel.webview.html = generateHTML(data.html);
     });
 
+	let lastEditTime = 0;
 	let textChange = vscode.workspace.onDidChangeTextDocument((event) => {
+		let editTime = new Date().getTime();
+		if (editTime - lastEditTime < MIN_EDIT_TIME) {
+			return;
+		}
         // Check if the document is a text document
         if (event.document.languageId === 'plaintext' || event.document.languageId === 'python') {
+			lastEditTime = editTime;
 			let text = event.document.getText();
 			const state = stateTracker.getState(text);
 			const firstLine = text.split("\n")[0];
@@ -98,7 +106,7 @@ export function activate(context: vscode.ExtensionContext) {
 				state.ProblemID = firstLine.trim().replace(problemPrefix, "").trim();
 			}
 			state.SubjectID = vscode.workspace.getConfiguration(extensionName).get(subjectIDField);
-			console.log(state.SubjectID, event.document.fileName);
+			console.log(state.SubjectID, state.ProblemID);
 			eventHandler.handleEvent("File.Edit", state);
 		}
     });
