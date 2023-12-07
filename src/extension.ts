@@ -3,9 +3,10 @@
 import * as vscode from 'vscode';
 import { ActionHandler } from './ActionHandler';
 import { EventHandler } from './EventHandler';
-import { StateTracker } from './State';
+import { State, StateTracker } from './State';
 import { stat } from 'fs';
 import { FeedbackbackViewProvider } from './FeedbackbackViewProvider';
+import { AutograderViewProvider, TestResult } from './AutograderViewProvider';
 
 const extensionName = "cerpent";
 const subjectIDField = "logging.subjectID";
@@ -77,20 +78,61 @@ export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(disposable);
 
-	const provider = new FeedbackbackViewProvider(context.extensionUri);
+	const feedbackProvider = new FeedbackbackViewProvider(context.extensionUri);
 
 	context.subscriptions.push(
-		vscode.window.registerWebviewViewProvider("feedback", provider));
-	console.log("Registered feedback view provider");
+		vscode.window.registerWebviewViewProvider("feedback", feedbackProvider));
 
 	actionHandler.registerAction("ShowDiv", (data) => {
-        provider.setDivHTML(data.html);
+        feedbackProvider.setDivHTML(data.html);
     });
+
+	const autograderProvider = new AutograderViewProvider(context.extensionUri);
+
+	context.subscriptions.push(
+		vscode.window.registerWebviewViewProvider("autograder", autograderProvider));
+
 	actionHandler.registerAction("ShowTestCaseFeedback", (data) => {
 		console.log(data);
+		autograderProvider.setTestCaseResults(data);
+		let tests = data.tests as TestResult[];
+		let num = tests.map((test) => {
+			return test.score ? test.score : 0;
+		}).reduce((a, b) => {
+			return a + b;
+		});
+		let denom = tests.map((test) => {
+			return test.max_score ? test.max_score : 0;
+		}).reduce((a, b) => {
+			return a + b;
+		});
+		let score = denom === 0 ? 0 : num / denom;
+
+		lastState.score = score;
+		console.log("Submitting with score", score, lastState);
+		eventHandler.handleEvent("Submit", lastState);
 	});
 
 	let lastState = null;
+
+	function getState(document: vscode.TextDocument): State {
+		let text = document.getText();
+		const state = stateTracker.getState(text);
+		const firstLine = text.split("\n")[0];
+		if (firstLine.trim().startsWith("# Problem:")) {
+			state.ProblemID = firstLine.trim().replace(problemPrefix, "").trim();
+		}
+		state.SubjectID = vscode.workspace.getConfiguration(extensionName).get(subjectIDField);
+		let filename = document.fileName;
+		let workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
+		let relativePath = filename.substring(workspaceFolder.uri.fsPath.length + 1);
+		state.CodeStateSelection = relativePath;
+		return state;
+	}
+
+	function shouldRaiseEventForDocument(document: vscode.TextDocument): boolean {
+		return document.languageId === 'plaintext' || document.languageId === 'python';
+	}
 
 	let lastEditTime = 0;
 	let textChange = vscode.workspace.onDidChangeTextDocument((event) => {
@@ -99,23 +141,15 @@ export function activate(context: vscode.ExtensionContext) {
 			return;
 		}
         // Check if the document is a text document
-        if (event.document.languageId === 'plaintext' || event.document.languageId === 'python') {
-			lastEditTime = editTime;
-			let text = event.document.getText();
-			const state = stateTracker.getState(text);
-			const firstLine = text.split("\n")[0];
-			if (firstLine.trim().startsWith("# Problem:")) {
-				state.ProblemID = firstLine.trim().replace(problemPrefix, "").trim();
-			}
-			state.SubjectID = vscode.workspace.getConfiguration(extensionName).get(subjectIDField);
-			let filename = event.document.fileName;
-			let workspaceFolder = vscode.workspace.getWorkspaceFolder(event.document.uri);
-			let relativePath = filename.substring(workspaceFolder.uri.fsPath.length + 1);
-			state.CodeStateSelection = relativePath;
-			lastState = state;
-			console.log(state.SubjectID, state.ProblemID, state.CodeStateSelection);
-			eventHandler.handleEvent("File.Edit", state);
+		if (!shouldRaiseEventForDocument(event.document)) {
+			return;
 		}
+
+		lastEditTime = editTime;
+		let state = getState(event.document);
+		lastState = state;
+		console.log(state.SubjectID, state.ProblemID, state.CodeStateSelection);
+		eventHandler.handleEvent("File.Edit", state);
     });
 	context.subscriptions.push(textChange);
 
@@ -126,11 +160,24 @@ export function activate(context: vscode.ExtensionContext) {
 		const configuration = event.configuration;
 		// TODO: Don't restrict language
 		if (configuration.type === 'python') {
-			eventHandler.handleEvent("Submit", lastState);
+			eventHandler.handleEvent("RequestScore", lastState);
 		}
-	  });
+	});
 
-	  context.subscriptions.push(debugWatcher);
+	context.subscriptions.push(debugWatcher);
+
+	let saveWatcher = vscode.workspace.onDidSaveTextDocument(document => {
+		if (!shouldRaiseEventForDocument(document)) {
+			return;
+		}
+
+		let state = getState(document);
+		lastState = state;
+		console.log(state.SubjectID, state.ProblemID, state.CodeStateSelection);
+		eventHandler.handleEvent("RequestScore", state);
+	});
+
+	context.subscriptions.push(saveWatcher);
 
 }
 

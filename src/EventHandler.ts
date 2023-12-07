@@ -11,7 +11,7 @@ export class EventHandler {
         this.actionHandler = actionHandler;
     }
 
-    handleEvent(type: "Submit" | "File.Edit", data: State) {
+    handleEvent(type: "Submit" | "File.Edit" | "RequestScore", data: State) {
         for (const [endpointName, endpoint] of Object.entries(config.endpoints)) {
             if (endpoint.events[type] !== undefined) {
                 let url = endpoint.baseUrl + endpoint.events[type];

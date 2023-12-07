@@ -18,7 +18,7 @@ export const config = {
         "AutoGrader": {
             baseUrl: "http://localhost:5500/",
             events: {
-                "Submit": "Submit/",
+                "RequestScore": "RequestScore/",
             },
         }
     }
