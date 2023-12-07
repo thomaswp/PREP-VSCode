@@ -14,6 +14,12 @@ export const config = {
                 "Submit": "Submit/",
                 "File.Edit": "FileEdit/",
             },
+        },
+        "AutoGrader": {
+            baseUrl: "http://localhost:5500/",
+            events: {
+                "Submit": "Submit/",
+            },
         }
     }
 };

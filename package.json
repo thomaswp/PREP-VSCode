@@ -20,6 +20,24 @@
         "title": "Hello World"
       }
     ],
+    "viewsContainers": {
+      "panel": [
+        {
+          "id": "feedback-views",
+          "title": "Feedback",
+          "icon": "resources/test-view-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "feedback-views": [
+        {
+          "id": "feedback",
+          "name": "Code Feedback",
+          "type": "webview"
+        }
+      ]
+    },
     "configuration": {
       "title": "CERPENT",
       "properties": {

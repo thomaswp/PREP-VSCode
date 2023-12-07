@@ -4,8 +4,8 @@ import * as vscode from 'vscode';
 import { ActionHandler } from './ActionHandler';
 import { EventHandler } from './EventHandler';
 import { StateTracker } from './State';
-import { generateHTML } from './HTMLGenerator';
 import { stat } from 'fs';
+import { FeedbackbackViewProvider } from './FeedbackbackViewProvider';
 
 const extensionName = "cerpent";
 const subjectIDField = "logging.subjectID";
@@ -77,18 +77,20 @@ export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(disposable);
 
-	// TODO: Don't show in control condition / if there's no showDiv
-	const panel = vscode.window.createWebviewPanel(
-		'webviewSample', // Identifies the type of the webview. Used internally
-		'Webview Sample', // Title of the panel displayed to the user
-		{ preserveFocus: true, viewColumn: vscode.ViewColumn.Two },
-		{
-			enableScripts: false,
-		}
-	);
+	const provider = new FeedbackbackViewProvider(context.extensionUri);
+
+	context.subscriptions.push(
+		vscode.window.registerWebviewViewProvider("feedback", provider));
+	console.log("Registered feedback view provider");
+
 	actionHandler.registerAction("ShowDiv", (data) => {
-        panel.webview.html = generateHTML(data.html);
+        provider.setDivHTML(data.html);
     });
+	actionHandler.registerAction("ShowTestCaseFeedback", (data) => {
+		console.log(data);
+	});
+
+	let lastState = null;
 
 	let lastEditTime = 0;
 	let textChange = vscode.workspace.onDidChangeTextDocument((event) => {
@@ -106,11 +108,29 @@ export function activate(context: vscode.ExtensionContext) {
 				state.ProblemID = firstLine.trim().replace(problemPrefix, "").trim();
 			}
 			state.SubjectID = vscode.workspace.getConfiguration(extensionName).get(subjectIDField);
-			console.log(state.SubjectID, state.ProblemID);
+			let filename = event.document.fileName;
+			let workspaceFolder = vscode.workspace.getWorkspaceFolder(event.document.uri);
+			let relativePath = filename.substring(workspaceFolder.uri.fsPath.length + 1);
+			state.CodeStateSelection = relativePath;
+			lastState = state;
+			console.log(state.SubjectID, state.ProblemID, state.CodeStateSelection);
 			eventHandler.handleEvent("File.Edit", state);
 		}
     });
 	context.subscriptions.push(textChange);
+
+	let debugWatcher = vscode.debug.onDidStartDebugSession(event => {
+		if (lastState === null) {
+			return;
+		}
+		const configuration = event.configuration;
+		// TODO: Don't restrict language
+		if (configuration.type === 'python') {
+			eventHandler.handleEvent("Submit", lastState);
+		}
+	  });
+
+	  context.subscriptions.push(debugWatcher);
 
 }
 

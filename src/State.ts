@@ -8,6 +8,7 @@ export type State = {
     ProblemID: string;
     Attempt: number;
     CodeState: string;
+    CodeStateSelection?: string;
     NoLogging?: boolean;
     Score?: number;
 };
