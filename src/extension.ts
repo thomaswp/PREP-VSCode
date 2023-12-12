@@ -7,6 +7,7 @@ import { State, StateTracker } from './State';
 import { stat } from 'fs';
 import { FeedbackbackViewProvider } from './FeedbackbackViewProvider';
 import { AutograderViewProvider, TestResult } from './AutograderViewProvider';
+import path from 'path';
 
 const extensionName = "cerpent";
 const subjectIDField = "logging.subjectID";
@@ -122,10 +123,16 @@ export function activate(context: vscode.ExtensionContext) {
 		if (firstLine.trim().startsWith("# Problem:")) {
 			state.ProblemID = firstLine.trim().replace(problemPrefix, "").trim();
 		}
-		state.SubjectID = vscode.workspace.getConfiguration(extensionName).get(subjectIDField);
+		state.SubjectID = vscode.workspace.getConfiguration(extensionName)?.get(subjectIDField);
 		let filename = document.fileName;
 		let workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
-		let relativePath = filename.substring(workspaceFolder.uri.fsPath.length + 1);
+		let relativePath;
+		if (workspaceFolder) {
+			relativePath = filename.substring(workspaceFolder.uri.fsPath.length + 1);
+		} else {
+			// Get the filename only with no folder path
+			relativePath = filename.substring(filename.lastIndexOf(path.sep) + 1);
+		}
 		state.CodeStateSelection = relativePath;
 		return state;
 	}
