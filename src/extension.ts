@@ -125,14 +125,7 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 		state.SubjectID = vscode.workspace.getConfiguration(extensionName)?.get(subjectIDField);
 		let filename = document.fileName;
-		let workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
-		let relativePath;
-		if (workspaceFolder) {
-			relativePath = filename.substring(workspaceFolder.uri.fsPath.length + 1);
-		} else {
-			// Get the filename only with no folder path
-			relativePath = filename.substring(filename.lastIndexOf(path.sep) + 1);
-		}
+		let relativePath = filename.substring(filename.lastIndexOf(path.sep) + 1);
 		state.CodeStateSelection = relativePath;
 		return state;
 	}
