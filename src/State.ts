@@ -21,7 +21,6 @@ export class StateTracker {
     // TODO: get from course config
     courseID: string = "test";
     assignmentID: string = undefined;
-    problemID: string = "";
     subjectID: string = "";
     toolInstances = "CERPENT-VSCode v0.1";
 
@@ -29,7 +28,7 @@ export class StateTracker {
         this.nAttempts++;
     }
 
-    getState(codeState: string, score?: number): State {
+    getState(codeState: string, problemID?: string, score?: number): State {
 
         const state = {
             EventID: (this.nextEventID++).toString(),
@@ -38,7 +37,7 @@ export class StateTracker {
             ClientTimestamp: new Date().toISOString(),
             CourseID: this.courseID,
             AssignmentID: this.assignmentID,
-            ProblemID: this.problemID,
+            ProblemID: problemID,
             Attempt: this.nAttempts,
             CodeState: codeState,
             NoLogging: false,
