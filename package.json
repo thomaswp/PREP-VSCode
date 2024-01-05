@@ -35,7 +35,9 @@
           "id": "feedback",
           "name": "Code Feedback",
           "type": "webview"
-        },
+        }
+      ],
+      "test": [
         {
           "id": "autograder",
           "name": "Test Case Feedback",

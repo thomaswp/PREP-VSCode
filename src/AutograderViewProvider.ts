@@ -67,9 +67,14 @@ export class AutograderViewProvider implements vscode.WebviewViewProvider {
 	}
 
 	private _generateTestHTML(test: TestResult) {
-		return `
-			<tr><td>${test.name}</td><td>${test.status === "passed" ? "✓" : "✗"}</td></tr>
+		let name = test.number !== undefined ? `Test ${test.number}` : test.name;
+		let output = `
+			<tr><td>${name}</td><td>${test.status === "passed" ? "✓" : "✗"}</td></tr>
 		`;
+		if (test.status !== "passed" && test.output) {
+			output += `<tr><td colspan="2"><pre>${test.output}</pre></td></tr>`;
+		}
+		return output;
 	}
 
 	private _generateHTML(divContent: string) {
@@ -77,6 +82,22 @@ export class AutograderViewProvider implements vscode.WebviewViewProvider {
 		<html>
 			<head>
 			<title>Test Case Feedback on Your Code</title>
+			<style>
+				table {
+					font-family: arial, sans-serif;
+					border-collapse: collapse;
+					width: 100%;
+				}
+				td, th {
+					border: 1px solid;
+					text-align: left;
+					padding: 4px;
+				}
+				pre {
+					white-space: pre-wrap;
+					margin: 3px;
+				}
+			</style>
 			</head>
 			<table>
 				<th>Test Case</th><th>Result</th>

@@ -8,6 +8,7 @@ import { stat } from 'fs';
 import { FeedbackbackViewProvider } from './FeedbackbackViewProvider';
 import { AutograderViewProvider, TestResult } from './AutograderViewProvider';
 import path from 'path';
+import fs from 'fs';
 
 const extensionName = "cerpent";
 const subjectIDField = "logging.subjectID";
@@ -18,6 +19,7 @@ const MIN_EDIT_TIME = 100;
 
 // TODO: Get this from some course-specific configuration
 const subjectIDRegex = /^[a-zA-Z]{2,}[0-9]*$/;
+const problemIDRegex = /^(homework|inlab)[0-9]*\.py$/;
 const emailRegex = /^[a-zA-Z]{2,}[0-9]*@ncsu.edu$/;
 
 // This method is called when your extension is activated
@@ -95,6 +97,8 @@ export function activate(context: vscode.ExtensionContext) {
 
 	actionHandler.registerAction("ShowTestCaseFeedback", (data) => {
 		console.log(data);
+		// Focus the "Tests" tab of the action panel
+		vscode.commands.executeCommand('workbench.view.extension.test');
 		autograderProvider.setTestCaseResults(data);
 		let tests = data.tests as TestResult[];
 		let num = tests.map((test) => {
@@ -119,14 +123,18 @@ export function activate(context: vscode.ExtensionContext) {
 	function getState(document: vscode.TextDocument): State {
 		let text = document.getText();
 		const state = stateTracker.getState(text);
-		const firstLine = text.split("\n")[0];
-		if (firstLine.trim().startsWith("# Problem:")) {
-			state.ProblemID = firstLine.trim().replace(problemPrefix, "").trim();
-		}
+		// const firstLine = text.split("\n")[0];
+		// if (firstLine.trim().startsWith("# Problem:")) {
+		// 	state.ProblemID = firstLine.trim().replace(problemPrefix, "").trim();
+		// }
 		state.SubjectID = vscode.workspace.getConfiguration(extensionName)?.get(subjectIDField);
 		let filename = document.fileName;
 		let relativePath = filename.substring(filename.lastIndexOf(path.sep) + 1);
 		state.CodeStateSelection = relativePath;
+		state.ProblemID = relativePath;
+		if (state.ProblemID.includes(".")) {
+			state.ProblemID = state.ProblemID.substring(0, state.ProblemID.lastIndexOf("."));
+		}
 		return state;
 	}
 
@@ -166,6 +174,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(debugWatcher);
 
+	// TODO: Don't run every save, just on runs!
 	let saveWatcher = vscode.workspace.onDidSaveTextDocument(document => {
 		if (!shouldRaiseEventForDocument(document)) {
 			return;
@@ -173,6 +182,43 @@ export function activate(context: vscode.ExtensionContext) {
 
 		let state = getState(document);
 		lastState = state;
+		if (state.ProblemID.toLowerCase().includes("template")) {
+			let filePath = document.fileName.substring(0, document.fileName.lastIndexOf(path.sep) + 1);
+			vscode.window.showInputBox({
+				placeHolder: "inlabX.py / homeworkX.py",
+				prompt: "Rename your template file for this problem.",
+				validateInput: (fileName) => {
+					if (fileName === undefined || fileName === "") {
+						return "Enter a file name";
+					} else if (!problemIDRegex.test(fileName)) {
+						return "Use the file name in the assignment instructions (e.g. 'inlab2.py' or 'homework3.py')";
+					} else if (fs.existsSync(filePath + fileName)) {
+						return "File already exists!";
+					} else {
+						return null;
+					}
+				},
+				ignoreFocusOut: true,
+			}).then((fileName) => {
+				if (fileName !== undefined && problemIDRegex.test(fileName)) {
+					let newFilePath = filePath + fileName;
+					let newFileUri = vscode.Uri.file(newFilePath);
+					try
+					{
+						fs.renameSync(document.fileName, newFilePath);
+						vscode.workspace.openTextDocument(newFileUri).then(newDoc => {
+							vscode.window.showTextDocument(newDoc);
+						});
+					} catch (e) {
+						console.log(e);
+						vscode.window.showErrorMessage("Failed to rename file.");
+					}
+				} else {		
+					vscode.window.showWarningMessage("Don't forget to rename your template file (e.g. 'inlab2.py').\n" +
+						"If you do so, VS Code will be able to show you test case feedback.");
+				}
+			});
+		}
 		console.log(state.SubjectID, state.ProblemID, state.CodeStateSelection);
 		eventHandler.handleEvent("RequestScore", state);
 	});
