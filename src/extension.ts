@@ -123,10 +123,6 @@ export function activate(context: vscode.ExtensionContext) {
 	function getState(document: vscode.TextDocument): State {
 		let text = document.getText();
 		const state = stateTracker.getState(text);
-		// const firstLine = text.split("\n")[0];
-		// if (firstLine.trim().startsWith("# Problem:")) {
-		// 	state.ProblemID = firstLine.trim().replace(problemPrefix, "").trim();
-		// }
 		state.SubjectID = vscode.workspace.getConfiguration(extensionName)?.get(subjectIDField);
 		let filename = document.fileName;
 		let relativePath = filename.substring(filename.lastIndexOf(path.sep) + 1);
@@ -166,6 +162,11 @@ export function activate(context: vscode.ExtensionContext) {
 			return;
 		}
 		const configuration = event.configuration;
+
+		if (!lastState.ProblemID || !lastState.ProblemID || lastState.ProblemID.trim() === "") {
+			return;
+		}
+
 		// TODO: Don't restrict language
 		if (configuration.type === 'python') {
 			eventHandler.handleEvent("RequestScore", lastState);
@@ -220,7 +221,9 @@ export function activate(context: vscode.ExtensionContext) {
 			});
 		}
 		console.log(state.SubjectID, state.ProblemID, state.CodeStateSelection);
-		eventHandler.handleEvent("RequestScore", state);
+
+		// Request was not to run on save, though could still do it for internal logging
+		// eventHandler.handleEvent("RequestScore", state);
 	});
 
 	context.subscriptions.push(saveWatcher);
