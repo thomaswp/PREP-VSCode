@@ -118,6 +118,10 @@ export function activate(context: vscode.ExtensionContext) {
 		eventHandler.handleEvent("Submit", lastState);
 	});
 
+	actionHandler.registerAction("ShowError", (data) => {
+		console.log(data);
+	});
+
 	let lastState = null;
 
 	function getState(document: vscode.TextDocument): State {

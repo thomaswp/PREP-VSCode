@@ -16,7 +16,7 @@ export const config = {
             },
         },
         "AutoGrader": {
-            baseUrl: "http://localhost:5500/",
+            baseUrl: "https://isnap.csc.ncsu.edu/autograder/",
             events: {
                 "RequestScore": "RequestScore/",
             },
