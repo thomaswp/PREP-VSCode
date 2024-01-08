@@ -11,7 +11,7 @@ export class EventHandler {
         this.actionHandler = actionHandler;
     }
 
-    handleEvent(type: "Submit" | "File.Edit" | "RequestScore", data: State) {
+    handleEvent(type: "Submit" | "File.Edit" | "RequestScore", data: State, silently = false) {
         for (const [endpointName, endpoint] of Object.entries(config.endpoints)) {
             if (endpoint.events[type] !== undefined) {
                 let url = endpoint.baseUrl + endpoint.events[type];
@@ -23,6 +23,9 @@ export class EventHandler {
                     },
                     body: JSON.stringify(data),
                 }).then((response) => {
+                    if (silently) {
+                        return;
+                    }
                     response.json().then((data) => {
                         this.actionHandler.handleActions(data);
                     }).catch((error) => {

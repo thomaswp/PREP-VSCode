@@ -66,21 +66,6 @@ export function activate(context: vscode.ExtensionContext) {
 		getSubjectID();
 	}
 
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
-	let disposable = vscode.commands.registerCommand('cerpent.helloWorld', () => {
-		// The code you place here will be executed every time your command is executed
-		// Display a message box to the user
-		// vscode.window.showInformationMessage('Hello World from cerpent!');
-
-		fetch('https://isnap.csc.ncsu.edu:5500/')
-		.then(response => response.text())
-		.then(message => vscode.window.showInformationMessage(message));
-	});
-
-	context.subscriptions.push(disposable);
-
 	const feedbackProvider = new FeedbackbackViewProvider(context.extensionUri);
 
 	context.subscriptions.push(
@@ -100,22 +85,29 @@ export function activate(context: vscode.ExtensionContext) {
 		// Focus the "Tests" tab of the action panel
 		vscode.commands.executeCommand('workbench.view.extension.test');
 		autograderProvider.setTestCaseResults(data);
-		let tests = data.tests as TestResult[];
-		let num = tests.map((test) => {
-			return test.score ? test.score : 0;
-		}).reduce((a, b) => {
-			return a + b;
-		});
-		let denom = tests.map((test) => {
-			return test.max_score ? test.max_score : 0;
-		}).reduce((a, b) => {
-			return a + b;
-		});
-		let score = denom === 0 ? 0 : num / denom;
+		try
+		{
+			let tests = data.tests as TestResult[];
+			let num = tests.map((test) => {
+				return test.score ? test.score : 0;
+			}).reduce((a, b) => {
+				return a + b;
+			});
+			let denom = tests.map((test) => {
+				return test.max_score ? test.max_score : 0;
+			}).reduce((a, b) => {
+				return a + b;
+			});
+			let score = denom === 0 ? 0 : num / denom;
 
-		lastState.Score = score;
-		console.log("Submitting with score", score, lastState);
-		eventHandler.handleEvent("Submit", lastState);
+			lastState.Score = score;
+			console.log("Submitting with score", score, lastState);
+			eventHandler.handleEvent("Submit", lastState, true);
+		}
+		catch (e)
+		{
+			console.log(e);
+		}
 	});
 
 	actionHandler.registerAction("ShowError", (data) => {
@@ -179,7 +171,6 @@ export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(debugWatcher);
 
-	// TODO: Don't run every save, just on runs!
 	let saveWatcher = vscode.workspace.onDidSaveTextDocument(document => {
 		if (!shouldRaiseEventForDocument(document)) {
 			return;

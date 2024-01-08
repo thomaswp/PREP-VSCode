@@ -19,7 +19,7 @@ export class StateTracker {
     private nAttempts: number = 0;
 
     // TODO: get from course config
-    courseID: string = "test";
+    courseID: string = "CSC111-S24";
     assignmentID: string = undefined;
     subjectID: string = "";
     toolInstances = "CERPENT-VSCode v0.1";
