@@ -113,7 +113,7 @@ export function activate(context: vscode.ExtensionContext) {
 		});
 		let score = denom === 0 ? 0 : num / denom;
 
-		lastState.score = score;
+		lastState.Score = score;
 		console.log("Submitting with score", score, lastState);
 		eventHandler.handleEvent("Submit", lastState);
 	});
@@ -122,7 +122,7 @@ export function activate(context: vscode.ExtensionContext) {
 		console.log(data);
 	});
 
-	let lastState = null;
+	let lastState : State = null;
 
 	function getState(document: vscode.TextDocument): State {
 		let text = document.getText();
@@ -213,12 +213,13 @@ export function activate(context: vscode.ExtensionContext) {
 						fs.renameSync(document.fileName, newFilePath);
 						vscode.workspace.openTextDocument(newFileUri).then(newDoc => {
 							vscode.window.showTextDocument(newDoc);
+							closeFileIfOpen(document.uri);
 						});
 					} catch (e) {
 						console.log(e);
 						vscode.window.showErrorMessage("Failed to rename file.");
 					}
-				} else {		
+				} else {
 					vscode.window.showWarningMessage("Don't forget to rename your template file (e.g. 'inlab2.py').\n" +
 						"If you do so, VS Code will be able to show you test case feedback.");
 				}
@@ -232,6 +233,14 @@ export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(saveWatcher);
 
+}
+
+export async function closeFileIfOpen(file:vscode.Uri) : Promise<void> {
+    const tabs: vscode.Tab[] = vscode.window.tabGroups.all.map(tg => tg.tabs).flat();
+    const index = tabs.findIndex(tab => tab.input instanceof vscode.TabInputText && tab.input.uri.path === file.path);
+    if (index !== -1) {
+        await vscode.window.tabGroups.close(tabs[index]);
+    }
 }
 
 // This method is called when your extension is deactivated

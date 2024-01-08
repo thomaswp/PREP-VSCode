@@ -34,14 +34,16 @@
         {
           "id": "feedback",
           "name": "Code Feedback",
-          "type": "webview"
+          "type": "webview",
+          "visibility": "visible"
         }
       ],
       "test": [
         {
           "id": "autograder",
           "name": "Test Case Feedback",
-          "type": "webview"
+          "type": "webview",
+          "visibility": "visible"
         }
       ]
     },

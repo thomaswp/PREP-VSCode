@@ -99,10 +99,18 @@ export class AutograderViewProvider implements vscode.WebviewViewProvider {
 				}
 			</style>
 			</head>
+			<body>
 			<table>
 				<th>Test Case</th><th>Result</th>
 				${divContent}
 			</table>
+			<div>
+			<p>
+			This window displays feedback from your class autograder, similar
+			to if you submitted on Gradescope.
+			</p>
+			</div>
+			</body>
 		</head>`;
 		}
 }
