@@ -7,6 +7,7 @@ export class FeedbackbackViewProvider implements vscode.WebviewViewProvider {
 
 	private _view?: vscode.WebviewView;
 	private html: string = "";
+	private cachedCSS: string;
 
 	constructor(
 		private readonly _extensionUri: vscode.Uri,
@@ -33,20 +34,40 @@ export class FeedbackbackViewProvider implements vscode.WebviewViewProvider {
 		webviewView.show(true);
 	}
 
-	public setDivHTML(divHTML: string) {
-		this.html = this._generateHTML(divHTML);
-		if (this._view) {
-			this._view.webview.html = this.html;
-			this._view.show(true);
+	async getCSS(): Promise<string> {
+		if (this.cachedCSS) {
+			return this.cachedCSS;
 		}
+		let uri = `${config.endpoints.SimpleAIF.baseUrl}static/progress.css`;
+		return fetch(uri).then((response) => {
+			if (!response.ok) {
+				return;
+			}
+			return response.text().then((text) => {
+				this.cachedCSS = text;
+				return text;
+			});
+		});
 	}
 
-	private _generateHTML(divContent: string) {
+	public setDivHTML(divHTML: string) {
+		this._generateHTML(divHTML).then(html => {
+			this.html = html;
+			if (this._view) {
+				this._view.webview.html = this.html;
+				this._view.show(true);
+			}
+		});
+	}
+
+	private async _generateHTML(divContent: string) {
 		return `<!DOCTYPE html>
 		<html>
 			<head>
 			<title>AI-Generated Feedback for Your Code</title>
-			<link href="${config.endpoints.SimpleAIF.baseUrl}static/progress.css"  rel="stylesheet">
+			<style>
+				${await this.getCSS()}
+			</style>
 			</head>
 			<body>
 				<div>${divContent}</div>
