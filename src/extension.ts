@@ -218,8 +218,8 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 		console.log(state.SubjectID, state.ProblemID, state.CodeStateSelection);
 
-		// Request was not to run on save, though could still do it for internal logging
-		// eventHandler.handleEvent("RequestScore", state);
+		// Adding this back in, since we can't capture all run events
+		eventHandler.handleEvent("RequestScore", state);
 	});
 
 	context.subscriptions.push(saveWatcher);
