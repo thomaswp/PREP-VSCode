@@ -18,7 +18,7 @@ export class FeedbackbackViewProvider implements vscode.WebviewViewProvider {
 		context: vscode.WebviewViewResolveContext,
 		_token: vscode.CancellationToken,
 	) {
-		console.log("resolveWebviewView");
+		// console.log("resolveWebviewView");
 		this._view = webviewView;
 
 		webviewView.webview.options = {

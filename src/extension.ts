@@ -80,9 +80,16 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
 		vscode.window.registerWebviewViewProvider("autograder", autograderProvider));
 
+
+	// Focus on load so the feedback view loads. This is the only
+	// way to ensure the view loads properly.
+	// Don't use these commands on events, since they steal focus.
+	vscode.commands.executeCommand("autograder.focus");
+	vscode.commands.executeCommand("feedback.focus");
+
 	actionHandler.registerAction("ShowTestCaseFeedback", (data) => {
 		console.log(data);
-		// Focus the "Tests" tab of the action panel
+		// Show the "Tests" tab of the action panel
 		vscode.commands.executeCommand('workbench.view.extension.test');
 		autograderProvider.setTestCaseResults(data);
 		try
