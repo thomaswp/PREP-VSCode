@@ -108,7 +108,7 @@ export function activate(context: vscode.ExtensionContext) {
 			let score = denom === 0 ? 0 : num / denom;
 
 			lastState.Score = score;
-			console.log("Submitting with score", score, lastState);
+			// console.log("Submitting with score", score, lastState);
 			eventHandler.handleEvent("Submit", lastState, true);
 		}
 		catch (e)
@@ -152,10 +152,16 @@ export function activate(context: vscode.ExtensionContext) {
 			return;
 		}
 
+		// No need to run if nothing changed (e.g. just a save)
+		if (event.contentChanges.length === 0) {
+			// console.log("No content changes");
+			return;
+		}
+
 		lastEditTime = editTime;
 		let state = getState(event.document);
 		lastState = state;
-		console.log(state.SubjectID, state.ProblemID, state.CodeStateSelection);
+		console.log("Edit", state.SubjectID, state.ProblemID, state.CodeStateSelection);
 		eventHandler.handleEvent("File.Edit", state);
     });
 	context.subscriptions.push(textChange);
@@ -223,7 +229,7 @@ export function activate(context: vscode.ExtensionContext) {
 				}
 			});
 		}
-		console.log(state.SubjectID, state.ProblemID, state.CodeStateSelection);
+		console.log("Save", state.SubjectID, state.ProblemID, state.CodeStateSelection);
 
 		// Adding this back in, since we can't capture all run events
 		eventHandler.handleEvent("RequestScore", state);
