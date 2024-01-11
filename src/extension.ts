@@ -89,8 +89,6 @@ export function activate(context: vscode.ExtensionContext) {
 
 	actionHandler.registerAction("ShowTestCaseFeedback", (data) => {
 		console.log(data);
-		// Show the "Tests" tab of the action panel
-		vscode.commands.executeCommand('workbench.view.extension.test');
 		autograderProvider.setTestCaseResults(data);
 		try
 		{

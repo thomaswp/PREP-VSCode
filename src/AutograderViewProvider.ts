@@ -23,6 +23,7 @@ export class AutograderViewProvider implements vscode.WebviewViewProvider {
 	// public static readonly viewType = 'calicoColors.colorsView';
 
 	private _view?: vscode.WebviewView;
+	public get view() { return this._view; }
 	private html: string = "";
 
 	constructor(
