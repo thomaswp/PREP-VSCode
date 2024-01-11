@@ -85,131 +85,82 @@ export class AutograderViewProvider implements vscode.WebviewViewProvider {
 	private _generateHTML(divContent: string) {
 		const themeKind = vscode.window.activeColorTheme.kind;
 		const isLightTheme = themeKind === vscode.ColorThemeKind.Light || themeKind === vscode.ColorThemeKind.HighContrastLight;
-		const style = isLightTheme
-			? `
-				body {
-					font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-					margin: 0;
-					padding: 0;
-					color: #333;
-				}
-				table {
-					font-family: 'Courier New', Courier, monospace;
-					border-collapse: collapse;
-					width: 100%;
-					margin-top: 20px;
-				}
-				th {
-					background-color: #4CAF50;
-					color: white;
-					text-align: center;
-				}
-				td, th {
-					border: 1px solid #ddd; 
-					padding: 4px;
-				}
-				tr:nth-child(odd) {
-					background-color: #fff; /* White background */
-				}
-				tr:hover {
-					background-color: #ddd; 
-					cursor: pointer;
-				}
-				.passed {
-					color: green;
-					font-weight: bold;
-				}
-				.failed {
-					color: red; 
-					font-weight: bold;
-				}
-				.info-text {
-					margin: 16px;
-					padding: 8px;
-					background-color: #eef2f5; 
-					border-left: 4px solid #2196F3; 
-					font-size: 0.9em; 
-					line-height: 1.4; 
-					color: #5a5a5a; 
-				}
-				pre {
-					white-space: pre-wrap;
-					font-size: 0.9em;				
-					font-family: 'Consolas', 'Monaco', 'Courier New', monospace; 
-					border-left: 3px solid #f44336; 
-					padding: 0px 4px; 
-					margin: 0px 0; 
-					border-radius: 2px; 
-					color: #333; 
-				}
+		const mainFontColor = isLightTheme ? "#333" : "#d4d4d4";
+		const thBackgroundColor = isLightTheme ? "#4CAF50" : "#007acc";
+		const tableBorderColor = isLightTheme ? "#ddd" : "#3c3c3c";
+		const tableBackgroundColor = isLightTheme ? "#fff" : "#2d2d2d";
+		const passedColor = isLightTheme ? "green" : "#89d185";
+		const failedColor = isLightTheme ? "red" : "#f48771";
+		const infoTextBackgroundColor = isLightTheme ? "#eef2f5" : "#2d2d2d";
+		const infoTextColor = isLightTheme ? "#5a5a5a" : "#d4d4d4";
+		const reasonLeftBorderColor = isLightTheme ? "#f4c136" : "#f4c836";
+		const reasonColor = mainFontColor;
+		const style = 
+			`
+			body {
+				font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+				margin: 0;
+				padding: 0;
+				color: ${mainFontColor};
+			}
+			table {
+				border-collapse: collapse;
+				width: 100%;
+				margin-top: 5px;
+			}
+			th {
+				background-color: ${thBackgroundColor};
+				color: white;
+				text-align: center;
+			}
+			td, th {
+				border: 1px solid ${tableBorderColor}; 
+				padding: 4px;
+			}
+			tr:nth-child(odd) {
+				background-color: ${tableBackgroundColor};
+			}
+			tr:hover {
+				background-color: ${tableBorderColor}; 
+				cursor: pointer;
+			}
+			.passed {
+				color: ${passedColor};
+				font-weight: bold;
+			}
+			.failed {
+				color: ${failedColor}; 
+				font-weight: bold;
+			}
+			.info-text {
+				margin: 16px;
+				padding: 8px;
+				background-color: ${infoTextBackgroundColor}; 
+				border-left: 4px solid #2196F3; 
+				font-size: 0.9em; 
+				line-height: 1.4; 
+				color: ${infoTextColor}; 
+			}
+			pre {
+				white-space: pre-wrap;
+				font-size: 0.9em;				
+				font-family: 'Consolas', 'Monaco', 'Courier New', monospace; 
+				border-left: 3px solid ${reasonLeftBorderColor}; 
+				padding: 0px 4px; 
+				margin: 0px 0; 
+				border-radius: 2px; 
+				color: ${reasonColor}; 
+			}
 
-				/* Responsive font sizes */
-				body, table, th, td {
-					font-size: 0.95em; /* Adjust as needed */
-				}
-				.scrollable-table {
-					overflow-y: auto;
-					height: 100%; 
-				}
-				`
-			: `
-				body {
-					font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-					margin: 0;
-					padding: 0;
-					background-color: #1e1e1e;
-					color: #d4d4d4; 
-				}
-				table {
-					font-family: 'Courier New', Courier, monospace;
-					border-collapse: collapse;
-					width: 100%;
-					margin-top: 20px;
-				}
-				th {
-					background-color: #007acc;
-					color: white;
-					text-align: center;
-				}
-				td, th {
-					border: 1px solid #3c3c3c;
-					padding: 8px;
-				}
-				tr:nth-child(even) {
-					background-color: #2d2d2d; 
-				}
-				tr:hover {
-					background-color: #3e3e3e; 
-					cursor: pointer;
-				}
-				.passed {
-					color: #89d185;
-					font-weight: bold;
-				}
-				.failed {
-					color: #f48771; 
-					font-weight: bold;
-				}
-				pre {
-					white-space: pre-wrap;
-					font-size: 0.9em;				
-					font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-					border-left: 3px solid #f44336; 
-					padding: 0px 4px;
-					margin: 0px 0;
-					border-radius: 2px; 
-					color: #d4d4d4; 
-				}
-				.info-text {
-					margin: 16px;
-					padding: 8px;
-					background-color: #2a2d2e; 
-					border-left: 4px solid #2196F3; 
-					font-size: 0.9em; 
-					line-height: 1.4; 
-					color: #d4d4d4; 
-				}
-				`;
+			/* Responsive font sizes */
+			body, table, th, td {
+				font-size: 0.95em; /* Adjust as needed */
+			}
+			.scrollable-table {
+				overflow-y: auto;
+				height: 100%; 
+			}
+			`;
 		return `<!DOCTYPE html>
 		<html>
 			<head>
