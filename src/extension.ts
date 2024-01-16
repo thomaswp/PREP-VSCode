@@ -71,7 +71,20 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
 		vscode.window.registerWebviewViewProvider("feedback", feedbackProvider));
 
+		
+
+	// Focus the first time we show a view. This is the only
+	// way to ensure the view loads properly, but it steals focus
+	// so we don't do it every time.
+	let hasFocusedAutograder = false;
+	let hasFocusedFeedback = false;
+
 	actionHandler.registerAction("ShowDiv", (data) => {
+		if (!hasFocusedFeedback) {
+			hasFocusedFeedback = true;
+			vscode.commands.executeCommand("feedback.focus");
+			vscode.commands.executeCommand("workbench.action.focusActiveEditorGroup");
+		}
         feedbackProvider.setDivHTML(data.html);
     });
 
@@ -80,15 +93,13 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
 		vscode.window.registerWebviewViewProvider("autograder", autograderProvider));
 
-
-	// Focus on load so the feedback view loads. This is the only
-	// way to ensure the view loads properly.
-	// Don't use these commands on events, since they steal focus.
-	vscode.commands.executeCommand("autograder.focus");
-	vscode.commands.executeCommand("feedback.focus");
-
 	actionHandler.registerAction("ShowTestCaseFeedback", (data) => {
 		console.log(data);
+		if (!hasFocusedAutograder) {
+			hasFocusedAutograder = true;
+			vscode.commands.executeCommand("autograder.focus");
+			vscode.commands.executeCommand("workbench.action.focusActiveEditorGroup");
+		}
 		autograderProvider.setTestCaseResults(data);
 		try
 		{
