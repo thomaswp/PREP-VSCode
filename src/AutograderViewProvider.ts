@@ -28,21 +28,34 @@ export class UnityIDWarning {
 		return this.getMessage(showing);
 	}
 
+	registerWebview(webview: vscode.Webview) {
+		webview.onDidReceiveMessage((data) => {
+			if (data.command === "setSubjectID") {
+				vscode.commands.executeCommand("cerpent.setSubjectID");
+			}
+		});
+	}
+
 	private getMessage(showing: boolean) {
 		if (showing)  {
 			return `
+			<html>
+			<body>
 			<script>
+			const vscode = acquireVsCodeApi();
 			function setSubjectID() {
 				vscode.postMessage({
 					command: 'setSubjectID',
-				})
+				});
 			}
 			</script>
-			UnityID is required to received feedback. Restart VS Code to enter your UnityID.
-			<button onclick="setSubjectID">Enter UnityID</button>
+			A UnityID is required to received feedback.
+			<button onclick="setSubjectID()">Enter your UnityID</button>
+			</body>
+			</html>
 			`;
 		} else {
-			return "";
+			return "UnityID accepted!";
 		}
 	}
 
@@ -78,19 +91,15 @@ export class AutograderViewProvider implements vscode.WebviewViewProvider {
 		};
 
 		webviewView.webview.html = this.html;
-		webviewView.webview.onDidReceiveMessage((data) => {
-			console.log(data);
-			if (data.command === "setSubjectID") {
-				
-			}
-		});
+		this.unityIDWarning.registerWebview(webviewView.webview);
 
 		webviewView.show(true);
 	}
 
 	public setUnityIDWarning(isWarning: boolean) {
 		let html = this.unityIDWarning.setShowingAndGetHTML(isWarning);
-		if (html) {
+		console.log(isWarning, html);
+		if (html !== null) {
 			this.setHTML(html);
 		}
 	}

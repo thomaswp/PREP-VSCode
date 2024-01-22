@@ -32,6 +32,7 @@ export class FeedbackbackViewProvider implements vscode.WebviewViewProvider {
 		};
 
 		webviewView.webview.html = this.html;
+		this.unityIDWarning.registerWebview(webviewView.webview);
 
 		webviewView.show(true);
 	}
@@ -54,7 +55,7 @@ export class FeedbackbackViewProvider implements vscode.WebviewViewProvider {
 
 	public setUnityIDWarning(isWarning: boolean) {
 		let html = this.unityIDWarning.setShowingAndGetHTML(isWarning);
-		if (html) {
+		if (html !== null) {
 			this.setHTML(html);
 		}
 	}

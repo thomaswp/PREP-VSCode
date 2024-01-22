@@ -36,6 +36,9 @@ export function activate(context: vscode.ExtensionContext) {
     const stateTracker = new StateTracker();
 
 	const config = vscode.workspace.getConfiguration(extensionName);
+	
+	const autograderProvider = new AutograderViewProvider(context.extensionUri);
+	const feedbackProvider = new FeedbackbackViewProvider(context.extensionUri);
 
 	function getSubjectID() {
 		vscode.window.showInputBox({
@@ -55,19 +58,23 @@ export function activate(context: vscode.ExtensionContext) {
 			if (subjectID !== undefined && subjectIDRegex.test(subjectID)) {
 				stateTracker.subjectID = subjectID;
 				config.update(subjectIDField, subjectID, vscode.ConfigurationTarget.Global);
+				feedbackProvider.setUnityIDWarning(false);
+				autograderProvider.setUnityIDWarning(false);
 			} else {
 				vscode.window.showErrorMessage("UnityID is required to received feedback.");
 			}
 		});
 	}
 
+	vscode.commands.registerCommand("cerpent.setSubjectID", () => {
+		getSubjectID();
+	});
+
 	stateTracker.subjectID = config.get(subjectIDField);
 	console.log(stateTracker.subjectID);
 	if (!stateTracker.subjectID || !subjectIDRegex.test(stateTracker.subjectID)) {
 		getSubjectID();
 	}
-
-	const feedbackProvider = new FeedbackbackViewProvider(context.extensionUri);
 
 	context.subscriptions.push(
 		vscode.window.registerWebviewViewProvider("feedback", feedbackProvider));
@@ -88,8 +95,6 @@ export function activate(context: vscode.ExtensionContext) {
 		}
         feedbackProvider.setDivHTML(data.html);
     });
-
-	const autograderProvider = new AutograderViewProvider(context.extensionUri);
 
 	context.subscriptions.push(
 		vscode.window.registerWebviewViewProvider("autograder", autograderProvider));
@@ -157,7 +162,7 @@ export function activate(context: vscode.ExtensionContext) {
 		let isValidSubjectID = state.SubjectID && subjectIDRegex.test(state.SubjectID);
 		
 		if (!isValidSubjectID) {
-			console.warn("Invalid state!", state.SubjectID, state.ProblemID);
+			console.log("Invalid SubjectID!", state.SubjectID);
 			feedbackProvider.setUnityIDWarning(true);
 			autograderProvider.setUnityIDWarning(true);
 			return false;
