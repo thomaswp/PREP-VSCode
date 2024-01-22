@@ -17,6 +17,36 @@ export type TestRunResults = {
     score: number,
 };
 
+export class UnityIDWarning {
+	private showing: boolean = false;
+
+	setShowingAndGetHTML(showing: boolean) : string {
+		if (this.showing === showing) {
+			return null;
+		}
+		this.showing = showing;
+		return this.getMessage(showing);
+	}
+
+	private getMessage(showing: boolean) {
+		if (showing)  {
+			return `
+			<script>
+			function setSubjectID() {
+				vscode.postMessage({
+					command: 'setSubjectID',
+				})
+			}
+			</script>
+			UnityID is required to received feedback. Restart VS Code to enter your UnityID.
+			<button onclick="setSubjectID">Enter UnityID</button>
+			`;
+		} else {
+			return "";
+		}
+	}
+
+}
 
 export class AutograderViewProvider implements vscode.WebviewViewProvider {
 
@@ -25,6 +55,7 @@ export class AutograderViewProvider implements vscode.WebviewViewProvider {
 	private _view?: vscode.WebviewView;
 	public get view() { return this._view; }
 	private html: string = "";
+	private unityIDWarning = new UnityIDWarning();
 
 	constructor(
 		private readonly _extensionUri: vscode.Uri,
@@ -39,7 +70,7 @@ export class AutograderViewProvider implements vscode.WebviewViewProvider {
 		this._view = webviewView;
 
 		webviewView.webview.options = {
-			enableScripts: false,
+			enableScripts: true,
 
 			localResourceRoots: [
 				this._extensionUri
@@ -47,8 +78,21 @@ export class AutograderViewProvider implements vscode.WebviewViewProvider {
 		};
 
 		webviewView.webview.html = this.html;
+		webviewView.webview.onDidReceiveMessage((data) => {
+			console.log(data);
+			if (data.command === "setSubjectID") {
+				
+			}
+		});
 
 		webviewView.show(true);
+	}
+
+	public setUnityIDWarning(isWarning: boolean) {
+		let html = this.unityIDWarning.setShowingAndGetHTML(isWarning);
+		if (html) {
+			this.setHTML(html);
+		}
 	}
 
 	public setTestCaseResults(results: TestRunResults) {
@@ -60,7 +104,11 @@ export class AutograderViewProvider implements vscode.WebviewViewProvider {
 		let testHTML = tests.map((test) => {
 			return this._generateTestHTML(test);
 		}).join("");
-		this.html = this._generateHTML(testHTML);
+		this.setHTML(this._generateHTML(testHTML));
+	}
+
+	private setHTML(html: string) {
+		this.html = html;
 		if (this._view) {
 			this._view.webview.html = this.html;
 			this._view.show(true);

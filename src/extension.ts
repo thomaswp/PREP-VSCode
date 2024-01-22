@@ -19,7 +19,8 @@ const MIN_EDIT_TIME = 100;
 
 // TODO: Get this from some course-specific configuration
 const subjectIDRegex = /^[a-zA-Z]{2,}[0-9]*$/;
-const problemIDRegex = /^(homework|inlab)[0-9]*\.py$/;
+const problemIDRegex = /^(homework|inlab)[0-9]*$/;
+const problemFileRegex = /^(homework|inlab)[0-9]*\.py$/;
 const emailRegex = /^[a-zA-Z]{2,}[0-9]*@ncsu.edu$/;
 
 // This method is called when your extension is activated
@@ -146,6 +147,25 @@ export function activate(context: vscode.ExtensionContext) {
 		return state;
 	}
 
+	function checkValidState(state: State): boolean {
+		let isValidProblemID = state.ProblemID && problemIDRegex.test(state.ProblemID);
+		if (!isValidProblemID) {
+			// No need for a warning - they're just not working on a valid problem
+			return false;
+		}
+
+		let isValidSubjectID = state.SubjectID && subjectIDRegex.test(state.SubjectID);
+		
+		if (!isValidSubjectID) {
+			console.warn("Invalid state!", state.SubjectID, state.ProblemID);
+			feedbackProvider.setUnityIDWarning(true);
+			autograderProvider.setUnityIDWarning(true);
+			return false;
+		}
+
+		return true;
+	}
+
 	function shouldRaiseEventForDocument(document: vscode.TextDocument): boolean {
 		return document.languageId === 'plaintext' || document.languageId === 'python';
 	}
@@ -171,6 +191,9 @@ export function activate(context: vscode.ExtensionContext) {
 		let state = getState(event.document);
 		lastState = state;
 		console.log("Edit", state.SubjectID, state.ProblemID, state.CodeStateSelection);
+		if (!checkValidState(lastState)) {
+			return;
+		}
 		eventHandler.handleEvent("File.Edit", state);
     });
 	context.subscriptions.push(textChange);
@@ -187,6 +210,10 @@ export function activate(context: vscode.ExtensionContext) {
 
 		// TODO: Don't restrict language
 		if (configuration.type === 'python') {
+			if (!checkValidState(lastState)) {
+				return;
+			}
+
 			eventHandler.handleEvent("RequestScore", lastState);
 		}
 	});
@@ -208,7 +235,7 @@ export function activate(context: vscode.ExtensionContext) {
 				validateInput: (fileName) => {
 					if (fileName === undefined || fileName === "") {
 						return "Enter a file name";
-					} else if (!problemIDRegex.test(fileName)) {
+					} else if (!problemFileRegex.test(fileName)) {
 						return "Use the file name in the assignment instructions (e.g. 'inlab2.py' or 'homework3.py')";
 					} else if (fs.existsSync(filePath + fileName)) {
 						return "File already exists!";
@@ -218,7 +245,7 @@ export function activate(context: vscode.ExtensionContext) {
 				},
 				ignoreFocusOut: true,
 			}).then((fileName) => {
-				if (fileName !== undefined && problemIDRegex.test(fileName)) {
+				if (fileName !== undefined && problemFileRegex.test(fileName)) {
 					let newFilePath = filePath + fileName;
 					let newFileUri = vscode.Uri.file(newFilePath);
 					try
@@ -240,6 +267,9 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 		console.log("Save", state.SubjectID, state.ProblemID, state.CodeStateSelection);
 
+		if (!checkValidState(state)) {
+			return;
+		}
 		// Adding this back in, since we can't capture all run events
 		eventHandler.handleEvent("RequestScore", state);
 	});

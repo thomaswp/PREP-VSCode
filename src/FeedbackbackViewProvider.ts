@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { config } from './config';
+import { UnityIDWarning } from './AutograderViewProvider';
 
 export class FeedbackbackViewProvider implements vscode.WebviewViewProvider {
 
@@ -8,6 +9,7 @@ export class FeedbackbackViewProvider implements vscode.WebviewViewProvider {
 	private _view?: vscode.WebviewView;
 	private html: string = "";
 	private cachedCSS: string;
+	private unityIDWarning = new UnityIDWarning();
 
 	constructor(
 		private readonly _extensionUri: vscode.Uri,
@@ -22,7 +24,7 @@ export class FeedbackbackViewProvider implements vscode.WebviewViewProvider {
 		this._view = webviewView;
 
 		webviewView.webview.options = {
-			enableScripts: false,
+			enableScripts: true,
 
 			localResourceRoots: [
 				this._extensionUri
@@ -50,14 +52,25 @@ export class FeedbackbackViewProvider implements vscode.WebviewViewProvider {
 		});
 	}
 
+	public setUnityIDWarning(isWarning: boolean) {
+		let html = this.unityIDWarning.setShowingAndGetHTML(isWarning);
+		if (html) {
+			this.setHTML(html);
+		}
+	}
+
 	public setDivHTML(divHTML: string) {
 		this._generateHTML(divHTML).then(html => {
-			this.html = html;
-			if (this._view) {
-				this._view.webview.html = this.html;
-				this._view.show(true);
-			}
+			this.setHTML(html);
 		});
+	}
+
+	private setHTML(html: string) {
+		this.html = html;
+		if (this._view) {
+			this._view.webview.html = this.html;
+			this._view.show(true);
+		}
 	}
 
 	private async _generateHTML(divContent: string) {
