@@ -27,6 +27,7 @@ export class EventHandler {
                         return;
                     }
                     response.json().then((data) => {
+                        console.log("Receiving action", data);
                         this.actionHandler.handleActions(data);
                     }).catch((error) => {
                         this.actionHandler.handleError(error);

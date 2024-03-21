@@ -8,8 +8,8 @@ export const config = {
     },
     endpoints: {
         "SimpleAIF": {
-            // baseUrl: "http://localhost:5500/",
-            baseUrl: "https://isnap.csc.ncsu.edu/aif-csc111/",
+            // For demo, use localhost
+            baseUrl: "http://localhost:5500/",
             events: {
                 "Submit": "Submit/",
                 "File.Edit": "FileEdit/",

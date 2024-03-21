@@ -124,7 +124,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 			lastState.Score = score;
 			// console.log("Submitting with score", score, lastState);
-			eventHandler.handleEvent("Submit", lastState, true);
+			eventHandler.handleEvent("Submit", lastState);
 		}
 		catch (e)
 		{
@@ -134,6 +134,10 @@ export function activate(context: vscode.ExtensionContext) {
 
 	actionHandler.registerAction("ShowError", (data) => {
 		console.log(data);
+	});
+
+	actionHandler.registerAction("ShowMessage", (data) => {
+		vscode.window.showInformationMessage(data.message);
 	});
 
 	let lastState : State = null;
